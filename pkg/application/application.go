@@ -1,10 +1,18 @@
 package application
 
+import (
+	"github.com/hankeyyh/yrpc/pkg"
+	"log"
+)
+
 type Application struct {
 }
 
 func (app *Application) Init() error {
-	// todo 执行注册的初始化方法
+	// 执行注册的初始化方法, 包括框架+用户自定义
+	if err := pkg.DefaultRegister.Init(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -32,5 +40,8 @@ func (app *Application) Stop() error {
 }
 
 func (app *Application) Destroy() {
-	// todo 执行注册的Destroy方法（逆序执行），将返回的err合并打印
+	// 执行注册的Destroy方法（逆序执行），将返回的err合并打印
+	if err := pkg.DefaultRegister.Destroy(); err != nil {
+		log.Print(err)
+	}
 }
