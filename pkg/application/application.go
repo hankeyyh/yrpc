@@ -5,7 +5,12 @@ import (
 	"github.com/hankeyyh/yrpc/pkg"
 	"golang.org/x/sync/errgroup"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
+
+var ShutdownSignal = []os.Signal{syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM}
 
 type Application struct {
 }
@@ -57,17 +62,42 @@ func (app *Application) Start() error {
 	return nil
 }
 
+func (app *Application) waitSignal() {
+	cc := make(chan os.Signal, 2)
+	signal.Notify(cc, ShutdownSignal...)
+	go func() {
+		sig := <-cc
+		if sig == syscall.SIGQUIT {
+			app.Stop()
+		} else {
+			app.GracefulStop()
+		}
+		<-cc
+		os.Exit(128 + int(sig.(syscall.Signal))) // second signal. Exit directly.
+	}()
+}
+
 func (app *Application) Run() error {
 	// todo app.Start
-	// todo 注册退出信号SIGINT，SIGQUIT
+	if err := app.Start(); err != nil {
+		return err
+	}
+	// 注册退出信号SIGINT，SIGQUIT
+	app.waitSignal()
+
 	// todo 阻塞，等待退出信号←quit（异常，非异常），执行server.Stop
 	// todo app.Destroy
+	app.Destroy()
 	return nil
 }
 
 func (app *Application) Stop() error {
 	// todo servers stop / gracefulStop
 	// todo quit正常关闭
+	return nil
+}
+
+func (app *Application) GracefulStop() error {
 	return nil
 }
 
